@@ -19,12 +19,13 @@ const root = {
 };
 
 const app = express();
-//
+// graphQL middleware - sets up graphql server.. pass in graphiql to help with queries
 app.use(
   "/graphql",
   graphqlHTTP({
     schema: schema,
     rootValue: root,
+    graphiql: true,
   })
 );
 
