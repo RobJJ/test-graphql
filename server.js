@@ -1,12 +1,14 @@
 const express = require("express");
 const path = require("path");
-// this function will help us build a schema using the type system
-// const { buildSchema } = require("graphql");
-// middleware function
-const { graphqlHTTP } = require("express-graphql");
 // graphQL functions taken from package
 const { loadFilesSync } = require("@graphql-tools/load-files");
 const { makeExecutableSchema } = require("@graphql-tools/schema");
+// this function will help us build a schema using the type system
+// const { buildSchema } = require("graphql");
+// middleware function
+// this is replaced with appolo express package
+// const { graphqlHTTP } = require("express-graphql");
+const { ApolloServer } = require("apollo-server-express");
 
 // const schemaText = `
 // type Query {
@@ -24,12 +26,7 @@ const resolversArray = loadFilesSync(path.join(__dirname, "**/*.resolvers.js"));
 const typesArray = loadFilesSync("**/*", {
   extensions: ["graphql"],
 });
-// this makeExecutableSchema is replacing the buildSchema function we used earlier to set the schema
-const schema = makeExecutableSchema({
-  // typeDefs are like schemas... pass in the 'arr' as created by the loadFilesSync function provided by tools
-  typeDefs: typesArray,
-  resolvers: resolversArray,
-});
+
 // start with special query type, root type.. defines enter point for all queries..
 // we are determining shape of data
 // [Product], will be a list of these types..
@@ -42,17 +39,39 @@ const schema = makeExecutableSchema({
 //   orders: require("./orders/orders.model"),
 // };
 
-const app = express();
 // graphQL middleware - sets up graphql server.. pass in graphiql to help with queries
-app.use(
-  "/graphql",
-  graphqlHTTP({
-    schema: schema,
-    // rootValue: root,
-    graphiql: true,
-  })
-);
+// app.use(
+//   "/graphql",
+//   graphqlHTTP({
+//     schema: schema,
+//     // rootValue: root,
+//     graphiql: true,
+//   })
+// );
+async function startApolloServer() {
+  const app = express();
 
-app.listen(3000, () => {
-  console.log(`Running graphQL server...`);
-});
+  // this makeExecutableSchema is replacing the buildSchema function we used earlier to set the schema
+  const schema = makeExecutableSchema({
+    // typeDefs are like schemas... pass in the 'arr' as created by the loadFilesSync function provided by tools
+    typeDefs: typesArray,
+    resolvers: resolversArray,
+  });
+  // contains all middleware
+  const server = new ApolloServer({
+    schema: schema,
+  });
+
+  await server.start();
+  // connect the middleware with express server
+  server.applyMiddleware({
+    app: app,
+    path: "/graphql",
+  });
+
+  app.listen(3000, () => {
+    console.log(`Running graphQL apollo server...`);
+  });
+}
+
+startApolloServer();
