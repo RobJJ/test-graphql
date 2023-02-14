@@ -17,11 +17,18 @@ const { makeExecutableSchema } = require("@graphql-tools/schema");
 // ** look into any directorys../* match any files with ____
 // use build in path module and join func
 // we want this loadFile func to look at our server directory specifically so we need to use the __dirname
-const typesArray = loadFilesSync(path.join(__dirname, "**/*.graphql"));
+// OLD
+// const typesArray = loadFilesSync(path.join(__dirname, "**/*.graphql"));
+const resolversArray = loadFilesSync(path.join(__dirname, "**/*.resolvers.js"));
+// New way of same approach
+const typesArray = loadFilesSync("**/*", {
+  extensions: ["graphql"],
+});
 // this makeExecutableSchema is replacing the buildSchema function we used earlier to set the schema
 const schema = makeExecutableSchema({
-  // typeDefs are like schemas
-  typeDefs: [schemaText],
+  // typeDefs are like schemas... pass in the 'arr' as created by the loadFilesSync function provided by tools
+  typeDefs: typesArray,
+  resolvers: resolversArray,
 });
 // start with special query type, root type.. defines enter point for all queries..
 // we are determining shape of data
@@ -30,36 +37,10 @@ const schema = makeExecutableSchema({
 // ID is a special graphQL type we can use, almost like a string but more explicit
 // const schema = buildSchema();
 
-const root = {
-  products: [
-    {
-      id: "redshoe",
-      description: "Red Shoe",
-      price: 42.54,
-    },
-    {
-      id: "bluejean",
-      description: "Blue Jeans",
-      price: 12.94,
-    },
-  ],
-  orders: [
-    {
-      date: "2005-05-05",
-      subtotal: 90.22,
-      items: [
-        {
-          product: {
-            id: "redshoe",
-            description: "Old Red Shoe",
-            price: 45.22,
-          },
-          quantity: 2,
-        },
-      ],
-    },
-  ],
-};
+// const root = {
+//   products: require("./products/products.model"),
+//   orders: require("./orders/orders.model"),
+// };
 
 const app = express();
 // graphQL middleware - sets up graphql server.. pass in graphiql to help with queries
@@ -67,7 +48,7 @@ app.use(
   "/graphql",
   graphqlHTTP({
     schema: schema,
-    rootValue: root,
+    // rootValue: root,
     graphiql: true,
   })
 );
